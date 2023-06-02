@@ -1,8 +1,10 @@
 package com.green.stitch.task.greenstitch.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -15,6 +17,7 @@ import com.green.stitch.task.greenstitch.repository.UserRepository;
 public class LoginController {
     @Autowired
     private UserRepository userRepository;
+
 
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody User user) {
@@ -31,7 +34,18 @@ public class LoginController {
     }
 
     @PostMapping("/signup")
-    public User createUser(@RequestBody User user) {
-        return userRepository.save(user);
+    public ResponseEntity<String> createUser(@RequestBody User user) {
+        if (userRepository.findByEmail(user.getEmail()) != null) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Username already exists");
+        }
+        user.setPassword(passwordEncoder().encode(user.getPassword()));
+        userRepository.save(user);
+        return ResponseEntity.status(HttpStatus.CREATED).body("User registered successfully");
     }
+    
+    @Bean
+    public BCryptPasswordEncoder passwordEncoder(){ 
+        return new BCryptPasswordEncoder(); 
+    }
+
 }
